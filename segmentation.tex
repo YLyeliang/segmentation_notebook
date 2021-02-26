@@ -1,0 +1,40 @@
+\documentclass{article}
+
+\usepackage[UTF8]{ctex}
+\usepackage{amsmath}
+\usepackage{graphicx,subfig}
+\usepackage{caption}
+\usepackage{booktabs}
+\usepackage{indentfirst}
+\setlength{\parindent}{2em}
+\if CLASSOPTIONcompsoc
+  \usepackage[nocompress]{cite}
+\else
+  % normal IEEE
+  \usepackage{cite}
+\fi
+
+
+
+\title{语义分割记录}
+\author{叶亮}
+\date{\today}
+\begin{document} 
+\maketitle
+\tableofcontents
+\section{SF-segnet}
+分割任务中影响性能的两个重要因素：分辨率和语义表征能力。常用的方法有:
+
+atrous convolution:在后几个stage使用来保持高分辨率和较强的语义表征. 缺点：较大的计算能力和显存占用。
+
+fpn-like network: 通过双边连接来融合low-level和high-level的特征，提高语义表征能力。
+
+论文核心：fpn-like的连接方式ineffect.提出学习Semantic Flow between layers with different resolutions。即Flow Alignment Module(FAM),通过取相邻level的特征作为输入，输出offset field, and then warp the coarse feature to the fine feature with higher resolution according to the offset field. FAM为即插即用式，可插入到任意backbone中，called \textbf{SFNet}.灵感来源于光流。
+
+在场景解析任务中，主要有两个范式(paradigm)用于高分辨率语义分割。1. 沿主路径keep spatial and semantic information. 2. distributes spatial and semantic information on different parts in a network, then merges back via different strategies.
+
+The first is atrous convolution. The second is fuse multi-level feature maps for both spatiality and semantics
+
+\subsection{Method}
+文章采用了Encoder-decoder的架构。其中，Encoder部分为四个阶段的backbone,对应stage1, 2, 3, 4.步长分别为4, 8, 16, 32. Decoder部分为FPN的改进版。将之前的top-down部分的上采样相加模块替换成了Flow Alignment module(FAM). 通过语义流的方式来计算上采样的插值。在pytorch中的实现为：通过torch.grid{\_}sample来实现上采样差值运算。	
+\end{document}
