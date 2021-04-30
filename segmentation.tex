@@ -30,6 +30,31 @@ y = \frac{x - \mathrm{E}[x]}{ \sqrt{\mathrm{Var}[x] + \epsilon}} * \gamma + \bet
 \hat{x}_\text{new} = (1 - \text{momentum}) \times \hat{x} + \text{momemtum} \times x_t
 \end{align}
 
+\subsection{Entropy}
+信息熵:
+\begin{align}
+H(x) = -\sum_{x\in\chi}p(x)\log{p(x)} = \sum_{x\in\chi}p(x)\log{\dfrac{1}{{p(x)}}}
+\end{align}
+即事件发生概率的倒数的期望，熵越大代表事件发生的不可能性大，里面包含的信息量越大。
+
+信息论解释：按照真实分布p来编码样本所需的编码长度的期望，信息熵$H(p)$.
+\begin{align}
+\sum_{i}p(i) * \log{\dfrac{1}{p(i)}}
+\end{align}
+
+交叉熵：按照不真实分布q来编码样本所需的编码长度的期望,$H(p,q)$
+\begin{align}
+\sum_{i}p(i) * \log{\dfrac{1}{q(i)}}
+\end{align}
+
+引申出KL散度$D(p||q) = H(p,q) - H(p)$,它也叫相对熵，表示两个分部的差异，差异越大，相对熵越大。
+\begin{align}
+\sum_{i}p(i) * \log{\dfrac{p(i)}{q(i)}} \\
+D_KL(p||q) = \sum_{i=1}^{N}p(x_i) \cdot ( \log{p(x_i)}-\log{q(x_i)} )
+\end{align}
+
+
+
 \section{SF-segnet}
 分割任务中影响性能的两个重要因素：分辨率和语义表征能力。常用的方法有:
 
@@ -47,7 +72,7 @@ The first is atrous convolution. The second is fuse multi-level feature maps for
 文章采用了Encoder-decoder的架构。其中，Encoder部分为四个阶段的backbone,对应stage1, 2, 3, 4.步长分别为4, 8, 16, 32. Decoder部分为FPN的改进版。将之前的top-down部分的上采样相加模块替换成了Flow Alignment module(FAM). 通过语义流的方式来计算上采样的插值。在pytorch中的实现为：通过torch.grid{\_}sample来实现上采样差值运算。	
 
 \section{DDRNet}
-"Deep Dual-resolution Networks for Real-time and Accurate Semantic Segmentation of Road Scenes"
+"Deep Dual-resolution Networks for Real-time and Accurate Semantic Segmentation of Road Scenes"\cite{hong2021deep}
 
 Inspired by HRNet,作者使用双分支网络，如图所示：
 \begin{figure}[htbp]
@@ -116,6 +141,9 @@ EM aims to find the maximum likelihood solution for latent variable models. Deno
 
 
 
+\bibliographystyle{IEEEtran}
+\bibliography{reference.bib}
 
 \end{document}
+
 
