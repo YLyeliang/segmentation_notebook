@@ -6,7 +6,9 @@
 \usepackage{caption}
 \usepackage{booktabs}
 \usepackage{indentfirst}
-\setlength{\parindent}{2em}
+\usepackage{geometry}
+\geometry{a4paper,scale=0.75}
+% \setlength{\parindent}{2em}
 \if CLASSOPTIONcompsoc
   \usepackage[nocompress]{cite}
 \else
@@ -69,7 +71,63 @@ fpn-like network: 通过双边连接来融合low-level和high-level的特征，�
 The first is atrous convolution. The second is fuse multi-level feature maps for both spatiality and semantics
 
 \subsection{Method}
-文章采用了Encoder-decoder的架构。其中，Encoder部分为四个阶段的backbone,对应stage1, 2, 3, 4.步长分别为4, 8, 16, 32. Decoder部分为FPN的改进版。将之前的top-down部分的上采样相加模块替换成了Flow Alignment module(FAM). 通过语义流的方式来计算上采样的插值。在pytorch中的实现为：通过torch.grid{\_}sample来实现上采样差值运算。	
+文章采用了Encoder-decoder的架构。其中，Encoder部分为四个阶段的backbone,对应stage1, 2, 3, 4.步长分别为4, 8, 16, 32. Decoder部分为FPN的改进版。将之前的top-down部分的上采样相加模块替换成了Flow Alignment module(FAM). 通过语义流的方式来计算上采样的插值。在pytorch中的实现为：通过torch.grid{\_}sample来实现上采样差值运算。
+
+\section{BiSeNet}
+旷视提出，“BiSeNet: Bilateral Segmentation Network for Real-time Semantic Segmentation”
+
+\subsection{Introduction}
+提出双边分割网络,空间路径:用较小的stride来保留空间信息，并生成高分辨率特征图;上下文路径:快速下采样策略来得到足够的感受野。提出一个特征融合模块来融合两路特征。2048x1024,  $68.4\%$ mIoU on cityscape, 105 FPS Titan XP. 
+\begin{figure}[htp]
+\centering
+\includegraphics[scale=0.4]{image/bisenet.png}
+\caption{不同方法比较.(a)裁剪和resize; (b) U-shape 结构;(c) BiSeNet}
+\label{Fig.bisenet}
+\end{figure}
+常用的加速方法如图\ref{Fig.bisenet}所示。(a)和(b)均会导致空间细节的损失。完整的U-shape结构其速度不理想。(c)为提出的模型，对于空间路径，使用三个卷积层得到步长为8的特征图；上下文路径，则在Xception尾部加入全局平局池化。在此基础上，提出特征融合模块(FFM)和注意力改善模块(ARM). 主要贡献如下:
+
+We propose a novel approach to decouple the function of spatial information preservation and receptive field offering into two paths. Specifically, we propose a Bilateral Segmentation Network (BiSeNet) with a Spatial Path (SP) and a Context Path (CP).
+
+We design two specific modules, Feature Fusion Module (FFM) and Attention Refinement Module (ARM), to further improve the accuracy with acceptable cost.
+
+We achieve impressive results on the benchmarks of Cityscapes, CamVid, and COCO-Stuff. More specifically, we obtain the results of $68.4\%$ on the Cityscapes test dataset with the speed of 105 FPS.
+
+\subsection{Method}
+\begin{figure}[htp]
+\centering
+\includegraphics[scale=0.5]{image/bisenet_arch.png}
+\caption{BiSeNet网络结构.(a)模块的长表示空间尺寸，厚度表示通道数; (b) ARM; (c) FFM}
+\label{Fig.bisenet_arch}
+\end{figure}
+\subsubsection{Spatial path}
+使用三个卷积，每个卷积$stride=2$,得到1/8特征图。
+\subsection{Context path}
+使用轻量网络，Xception来快速下采样得到较大感受野的特征图，并在尾部加入全局平均池化。
+
+ARM:使用全局平均池化来得到上下文信息，并计算注意力向量来引导学习。
+
+\subsection{Network Architecture}
+其结构如图\ref{Fig.bisenet_arch}所示。 使用预训练的Xception作为backbone。
+
+Loss:添加了两个辅助loss帮助训练，所有loss均采用softmax.如公式(1)所示; 使用$\alpha$来平衡主loss和辅助loss的权重，如公式(2)所示；在本文中，$\alpha$为1，
+\begin{align}
+loss  = \frac{1}{N} \sum_i{L_i} = \frac{1}{N	}\sum_i{-\log{(\frac{e^{p_i}}{e^{\sum_j{p_j}}})}}
+\end{align}
+其中，$p$为网络预测输出.
+\begin{align}
+L(X;W) = l_p(X;W) + \alpha \sum_{i=2}^{K}l_i(X_i;W)
+\end{align}
+其中,$X_i$为Xception的第i个stage的输出特征，在论文中$K=3$。
+
+\subsection{Experiment}
+Xception39 as backbone.
+
+Training details: SGD with batch size 16, momentum 0.9, weight decay $1e^{-4}$, "poly" learning rate, learning rate = initial learning rate x $(1 - \frac{iter}{max_iter}^{power})$, where power=0.9,  initial learning rate = $2.5e^{-2}$.
+
+Data augmentation: mean subtraction, random horizontal flip, random scale{0.75, 1.0, 1.5, 1.75, 2.0}, and random crop into fixed size.
+
+cityscape: Res-18 74.8\% on val, 74.7\% on test with FPS 65.5. Xception39, 69\% on val, 68.4\% on test with FPS 105.8
+
 
 \section{DDRNet}
 "Deep Dual-resolution Networks for Real-time and Accurate Semantic Segmentation of Road Scenes"\cite{hong2021deep}
